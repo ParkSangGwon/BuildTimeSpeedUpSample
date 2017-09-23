@@ -1,0 +1,85 @@
+apply plugin: 'com.android.application'
+
+android {
+    signingConfigs {
+        config {
+            storeFile file("debug.keystore")
+        }
+    }
+    compileSdkVersion 26
+    buildToolsVersion "26.0.0"
+    defaultConfig {
+        applicationId "com.tedpark.buildtimespeedupsample"
+        minSdkVersion 15
+        targetSdkVersion 26
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+
+        debug {
+            ext.enableCrashlytics = false
+            //ext.alwaysUpdateBuildId = false
+        }
+
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.debug
+        }
+    }
+    flavorDimensions "stage", "mode"
+    productFlavors {
+
+        dev {
+            dimension "stage"
+            versionCode 100
+            minSdkVersion 21
+
+            aaptOptions.cruncherEnabled = false
+            resConfigs "ko", "xxxhdpi"
+        }
+
+        prd {
+            dimension "stage"
+            versionCode new Date().format('yyMMddHHmm').toInteger()
+        }
+
+
+        free {
+            dimension "mode"
+            applicationIdSuffix ".free"
+        }
+        paid {
+            dimension "mode"
+            applicationIdSuffix ".paid"
+        }
+    }
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
+            universalApk false
+        }
+    }
+
+    android.variantFilter { variant ->
+        def buildName = variant.buildType.name;
+        def flavorName = variant.getFlavors().get(0).name;
+
+        if (flavorName == 'dev' && buildName == 'release'
+                || flavorName == 'prd' && buildName == 'debug') {
+            variant.setIgnore(true);
+        }
+
+        splits.abi.enable = (flavorName == 'prd');
+    }
+
+}
+
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+    compile 'com.android.support:appcompat-v7:26.0.0-alpha1'
+    //compile 'com.android.support:appcompat-v7:26.+'
+}
